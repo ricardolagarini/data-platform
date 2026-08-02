@@ -1,0 +1,12 @@
+# Qualidade de código
+ruff==0.8.4
+pytest==8.3.4
+
+# Ingestão
+requests==2.32.3
+pandas==2.2.3
+
+# Orquestração e transformação
+# (descomenta à medida que os componentes forem entrando)
+# apache-airflow==2.10.4
+# dbt-core==1.9.1
