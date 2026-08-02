@@ -1,4 +1,3 @@
-# data-platform
 
 # data-platform
 
