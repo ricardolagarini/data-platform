@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Lint & test (Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff pytest
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Format check
+        run: ruff format --check .
+
+      - name: Check for tests
+        id: has_tests
+        run: |
+          if compgen -G "tests/**/*.py" > /dev/null || compgen -G "tests/*.py" > /dev/null; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Nenhum teste encontrado em tests/ — a saltar o pytest."
+          fi
+
+      - name: Tests
+        if: steps.has_tests.outputs.found == 'true'
+        run: pytest -q
+
+  terraform:
+    name: Validate (Terraform)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for Terraform files
+        id: has_tf
+        run: |
+          if compgen -G "infra/**/*.tf" > /dev/null || compgen -G "infra/*.tf" > /dev/null; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Nenhum ficheiro .tf em infra/ — a saltar a validação."
+          fi
+
+      - uses: hashicorp/setup-terraform@v3
+        if: steps.has_tf.outputs.found == 'true'
+        with:
+          terraform_version: "1.9.8"
+
+      - name: Format check
+        if: steps.has_tf.outputs.found == 'true'
+        run: terraform fmt -check -recursive
+        working-directory: infra
+
+      - name: Init
+        if: steps.has_tf.outputs.found == 'true'
+        run: terraform init -backend=false
+        working-directory: infra
+
+      - name: Validate
+        if: steps.has_tf.outputs.found == 'true'
+        run: terraform validate
+        working-directory: infra
