@@ -1,8 +1,5 @@
 # data-platform
 
-![CI](https://github.com/clearbuild-rl/data-platform/actions/workflows/ci.yml/badge.svg)
-![License](https://img.shields.io/badge/license-MIT-1a1a1a)
-
 Pipeline de dados end-to-end com infraestrutura gerida como código. O objetivo é ter um ambiente reprodutível: um `terraform apply` levanta a infra, um comando levanta o Airflow local, e o mesmo código corre em local e em cloud.
 
 ## Arquitetura
